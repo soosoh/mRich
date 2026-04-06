@@ -6,13 +6,16 @@ var line = document.querySelector("#line")
 var tools = document.querySelector("#tools")
 var optcon = document.querySelector("#optionContainer")
 var optionbg = document.querySelector("#optionbg")
+
 var format = document.querySelectorAll(".format")
 var [bold, italic, underline] = format
 
-//data
+//variables
 let boldInstances = new Set()
 let italicInstances = new Set()
 let underlineInstances = new Set()
+
+let modified = false;
 
 //event listeners
 save.addEventListener("click", (e) => {
@@ -60,6 +63,7 @@ optcon.addEventListener("mouseout", (e) => {
 })
 
 bold.addEventListener("click", (e) => {
+    modified = false;
     let [start, end] = formatRange()
 
     for(i = start; i < end; i++){
@@ -70,6 +74,7 @@ bold.addEventListener("click", (e) => {
 })
 
 italic.addEventListener("click", (e) => {
+    modified = false;
     let [start, end] = formatRange()
 
     for(i = start; i < end; i++){
@@ -80,6 +85,7 @@ italic.addEventListener("click", (e) => {
 })
 
 underline.addEventListener("click", (e) => {
+    modified = false;
     let [start, end] = formatRange()
     
     for(i = start; i < end; i++){
@@ -142,12 +148,44 @@ function getPlainText(text){
     text = text.replaceAll("</i>", "")
     text = text.replaceAll("<u>", "")
     text = text.replaceAll("</u>", "")
-    text = text.replaceAll("</p>", "")
     let i = 0
     while(text.indexOf(`<p id="t${i}">`) >= 0){
+        const j0 = text.indexOf(`<p id="t${i}">`) + 10 + i.toString().length
+        let j = text.indexOf("</p>", j0)
+
+        //if content inside was modified
+        if(!modified && j - j0 > 1){
+            //pushes back future elements
+            const boldLoop = new Set([...boldInstances].sort())
+            console.log(boldInstances)
+            //deleting seq because we want to add something, but it is already there, which gets deleted
+            boldLoop.forEach((t)=>{
+                if(t > i){
+                    boldInstances.delete(t)
+                    console.log(t + " is now " + (t + (j - j0 - 1)))
+                }
+            })
+            //adding seq
+            boldLoop.forEach((t)=>{
+                if(t > i){
+                    boldInstances.add(t + (j - j0 - 1))
+                }
+            })
+            //adds new elements
+            if(boldInstances.has(i)){
+                for(k = 1; k < j - j0 + 1; k++){
+                    boldInstances.add(i + k)
+                    console.log((i + k) + " added")
+                }
+            }
+            console.log(boldInstances)
+            modified = true;
+            //TODO: make it work with other formatting
+        }
         text = text.replace(`<p id="t${i}">`, "")
         i++
     }
+    text = text.replaceAll("</p>", "")
     return text
 }
 
