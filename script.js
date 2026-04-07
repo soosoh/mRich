@@ -45,7 +45,7 @@ options.addEventListener("mouseover", (e) => {
     })
     
     if(document.getSelection().direction != "none"){
-        if(bodytext.innerHTML != getPlainText(bodytext.innerHTML, false)){
+        if(bodytext.innerHTML != getPlainText(bodytext.innerHTML)){
             let [start, end] = formatRange()
             const selected = new Set([...Array(end - start).keys()].map(i => i + start))
 
@@ -92,9 +92,11 @@ bold.addEventListener("click", (e) => {
 
     let [start, end] = formatRange()
 
-    for(i = start; i < end; i++){
-        boldInstances.add(i)
-    }
+    let selectedInstances = new Set([...Array(end - start).keys()].map(x => x + start))
+    beforeAddingFormats = boldInstances
+    boldInstances = boldInstances.symmetricDifference(selectedInstances)
+
+    expandFormatArea(beforeAddingFormats)
 
     loadEffects()
 })
@@ -104,9 +106,8 @@ italic.addEventListener("click", (e) => {
 
     let [start, end] = formatRange()
 
-    for(i = start; i < end; i++){
-        italicInstances.add(i)
-    }
+    let selectedInstances = new Set([...Array(end - start).keys()].map(x => x + start))
+    italicInstances = italicInstances.symmetricDifference(selectedInstances)
 
     loadEffects()
 })
@@ -116,9 +117,8 @@ underline.addEventListener("click", (e) => {
 
     let [start, end] = formatRange()
     
-    for(i = start; i < end; i++){
-        underlineInstances.add(i)
-    }
+    let selectedInstances = new Set([...Array(end - start).keys()].map(x => x + start))
+    underlineInstances = underlineInstances.symmetricDifference(selectedInstances)
 
     loadEffects()
 })
@@ -128,7 +128,7 @@ bodytext.innerHTML = document.cookie
 
 //internal functions
 function loadEffects(){
-    let text = getPlainText(bodytext.innerHTML, true)
+    let text = getPlainText(bodytext.innerHTML)
     const plainText = text
 
     //how much formatting was inserted
@@ -169,7 +169,7 @@ function loadEffects(){
     bodytext.innerHTML = text
 }
 
-function getPlainText(text, modify){
+function getPlainText(text){
     text = text.replaceAll("<b>", "")
     text = text.replaceAll("</b>", "")
     text = text.replaceAll("<i>", "")
@@ -178,11 +178,50 @@ function getPlainText(text, modify){
     text = text.replaceAll("</u>", "")
     let i = 0
     while(text.indexOf(`<p id="t${i}">`) >= 0){
+        text = text.replace(`<p id="t${i}">`, "")
+        i++
+    }
+    text = text.replaceAll("</p>", "")
+    return text
+}
+
+function formatRange(){
+    let start, end
+    let sel = window.getSelection()
+    if(bodytext.innerHTML == getPlainText(bodytext.innerHTML)){
+        if(sel.direction == "forward"){
+        start = (sel.direction == "forward")
+                ? sel.anchorOffset
+                : sel.focusOffset
+        end = (sel.direction == "forward")
+                ? sel.focusOffset
+                : sel.anchorOffset
+        }
+    }
+    else{
+        start = parseInt(((sel.direction == "forward")
+                        ? sel.anchorNode
+                        : sel.focusNode)
+                        .parentElement.id.slice(1))
+        end = parseInt(((sel.direction == "forward")
+                        ? sel.focusNode
+                        : sel.anchorNode)
+                        .parentElement.id.slice(1)) + 1
+    }
+
+    return [start, end]
+}
+
+function expandFormatArea(beforeAddingFormats){
+    text = bodytext.innerHTML
+    let i = 0
+    while(text.indexOf(`<p id="t${i}">`) >= 0){
         const j0 = text.indexOf(`<p id="t${i}">`) + 10 + i.toString().length
         let j = text.indexOf("</p>", j0)
 
         //if content inside was modified
-        if(modify && j - j0 > 1){
+        if(j - j0 > 1){
+            console.log(boldInstances)
             const boldTemp = new Set([...boldInstances].sort())
             const italicTemp = new Set([...italicInstances].sort())
             const underlineTemp = new Set([...underlineInstances].sort())
@@ -191,13 +230,20 @@ function getPlainText(text, modify){
                 if(t > i){
                     boldInstances.delete(t)
                 }
+                if(t == i && !beforeAddingFormats.has(i)){
+                    boldInstances.delete(t)
+                }
             })
             boldTemp.forEach((t)=>{
                 if(t > i){
                     boldInstances.add(t + (j - j0 - 1))
+                    console.log(t + " pushed to " + (t + (j - j0 - 1)))
+                }
+                if(t == i && !beforeAddingFormats.has(i)){
+                    boldInstances.delete(t)
                 }
             })
-            if(boldInstances.has(i)){
+            if(boldTemp.has(i)){
                 for(k = 1; k < j - j0; k++){
                     boldInstances.add(i + k)
                 }
@@ -234,37 +280,8 @@ function getPlainText(text, modify){
                     underlineInstances.add(i + k)
                 }
             }
+            console.log(boldInstances)
         }
-        text = text.replace(`<p id="t${i}">`, "")
         i++
     }
-    text = text.replaceAll("</p>", "")
-    return text
-}
-
-function formatRange(){
-    let start, end
-    let sel = window.getSelection()
-    if(bodytext.innerHTML == getPlainText(bodytext.innerHTML, false)){
-        if(sel.direction == "forward"){
-        start = (sel.direction == "forward")
-                ? sel.anchorOffset
-                : sel.focusOffset
-        end = (sel.direction == "forward")
-                ? sel.focusOffset
-                : sel.anchorOffset
-        }
-    }
-    else{
-        start = parseInt(((sel.direction == "forward")
-                        ? sel.anchorNode
-                        : sel.focusNode)
-                        .parentElement.id.slice(1))
-        end = parseInt(((sel.direction == "forward")
-                        ? sel.focusNode
-                        : sel.anchorNode)
-                        .parentElement.id.slice(1)) + 1
-    }
-
-    return [start, end]
 }
