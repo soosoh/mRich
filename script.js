@@ -39,7 +39,30 @@ options.addEventListener("mouseover", (e) => {
 
     tools.style.visibility = "visible"
 
+    format.forEach((el)=>{
+        el.style.color = "rgb(241, 205, 24)"
+        el.style.backgroundColor = "rgb(255, 249, 231)"
+    })
     
+    if(document.getSelection().direction != "none"){
+        if(bodytext.innerHTML != getPlainText(bodytext.innerHTML, false)){
+            let [start, end] = formatRange()
+            const selected = new Set([...Array(end - start).keys()].map(i => i + start))
+
+            if(selected.isSubsetOf(boldInstances)){
+                bold.style.backgroundColor = "rgb(241, 205, 24)"
+                bold.style.color = "rgb(255, 249, 231)"
+            }
+            if(selected.isSubsetOf(italicInstances)){
+                italic.style.backgroundColor = "rgb(241, 205, 24)"
+                italic.style.color = "rgb(255, 249, 231)"
+            }
+            if(selected.isSubsetOf(underlineInstances)){
+                underline.style.backgroundColor = "rgb(241, 205, 24)"
+                underline.style.color = "rgb(255, 249, 231)"
+            }
+        }
+    }
 
     optcon.style.pointerEvents = "auto"
     bold.style.pointerEvents = "auto"
@@ -65,6 +88,8 @@ optcon.addEventListener("mouseout", (e) => {
 })
 
 bold.addEventListener("click", (e) => {
+    if(document.getSelection().direction == "none") return
+
     let [start, end] = formatRange()
 
     for(i = start; i < end; i++){
@@ -75,6 +100,8 @@ bold.addEventListener("click", (e) => {
 })
 
 italic.addEventListener("click", (e) => {
+    if(document.getSelection().direction == "none") return
+
     let [start, end] = formatRange()
 
     for(i = start; i < end; i++){
@@ -85,6 +112,8 @@ italic.addEventListener("click", (e) => {
 })
 
 underline.addEventListener("click", (e) => {
+    if(document.getSelection().direction == "none") return
+
     let [start, end] = formatRange()
     
     for(i = start; i < end; i++){
