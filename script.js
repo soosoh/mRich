@@ -93,10 +93,10 @@ bold.addEventListener("click", (e) => {
     let [start, end] = formatRange()
 
     let selectedInstances = new Set([...Array(end - start).keys()].map(x => x + start))
-    beforeAddingFormats = boldInstances
+    let beforeFormatting = [boldInstances, italicInstances, underlineInstances]
     boldInstances = boldInstances.symmetricDifference(selectedInstances)
 
-    expandFormatArea(beforeAddingFormats)
+    expandFormatArea(...beforeFormatting)
 
     loadEffects()
 })
@@ -107,7 +107,10 @@ italic.addEventListener("click", (e) => {
     let [start, end] = formatRange()
 
     let selectedInstances = new Set([...Array(end - start).keys()].map(x => x + start))
+    let beforeFormatting = [boldInstances, italicInstances, underlineInstances]
     italicInstances = italicInstances.symmetricDifference(selectedInstances)
+
+    expandFormatArea(...beforeFormatting)
 
     loadEffects()
 })
@@ -118,7 +121,10 @@ underline.addEventListener("click", (e) => {
     let [start, end] = formatRange()
     
     let selectedInstances = new Set([...Array(end - start).keys()].map(x => x + start))
+    let beforeFormatting = [boldInstances, italicInstances, underlineInstances]
     underlineInstances = underlineInstances.symmetricDifference(selectedInstances)
+
+    expandFormatArea(...beforeFormatting)
 
     loadEffects()
 })
@@ -212,7 +218,7 @@ function formatRange(){
     return [start, end]
 }
 
-function expandFormatArea(beforeAddingFormats){
+function expandFormatArea(boldBefore, italicBefore, underlineBefore){
     text = bodytext.innerHTML
     let i = 0
     while(text.indexOf(`<p id="t${i}">`) >= 0){
@@ -230,7 +236,7 @@ function expandFormatArea(beforeAddingFormats){
                 if(t > i){
                     boldInstances.delete(t)
                 }
-                if(t == i && !beforeAddingFormats.has(i)){
+                if(t == i && !boldBefore.has(i)){
                     boldInstances.delete(t)
                 }
             })
@@ -238,9 +244,6 @@ function expandFormatArea(beforeAddingFormats){
                 if(t > i){
                     boldInstances.add(t + (j - j0 - 1))
                     console.log(t + " pushed to " + (t + (j - j0 - 1)))
-                }
-                if(t == i && !beforeAddingFormats.has(i)){
-                    boldInstances.delete(t)
                 }
             })
             if(boldTemp.has(i)){
@@ -253,13 +256,16 @@ function expandFormatArea(beforeAddingFormats){
                 if(t > i){
                     italicInstances.delete(t)
                 }
+                if(t == i && !italicBefore.has(i)){
+                    italicInstances.delete(t)
+                }
             })
             italicTemp.forEach((t)=>{
                 if(t > i){
                     italicInstances.add(t + (j - j0 - 1))
                 }
             })
-            if(italicInstances.has(i)){
+            if(italicTemp.has(i)){
                 for(k = 1; k < j - j0 + 1; k++){
                     italicInstances.add(i + k)
                 }
@@ -269,13 +275,16 @@ function expandFormatArea(beforeAddingFormats){
                 if(t > i){
                     underlineInstances.delete(t)
                 }
+                if(t == i && !underlineBefore.has(i)){
+                    underlineInstances.delete(t)
+                }
             })
             underlineTemp.forEach((t)=>{
                 if(t > i){
                     underlineInstances.add(t + (j - j0 - 1))
                 }
             })
-            if(underlineInstances.has(i)){
+            if(underlineTemp.has(i)){
                 for(k = 1; k < j - j0 + 1; k++){
                     underlineInstances.add(i + k)
                 }
