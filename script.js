@@ -155,32 +155,59 @@ function getPlainText(text){
 
         //if content inside was modified
         if(!modified && j - j0 > 1){
-            //pushes back future elements
-            const boldLoop = new Set([...boldInstances].sort())
-            console.log(boldInstances)
-            //deleting seq because we want to add something, but it is already there, which gets deleted
-            boldLoop.forEach((t)=>{
+            const boldTemp = new Set([...boldInstances].sort())
+            const italicTemp = new Set([...italicInstances].sort())
+            const underlineTemp = new Set([...underlineInstances].sort())
+
+            boldTemp.forEach((t)=>{
                 if(t > i){
                     boldInstances.delete(t)
-                    console.log(t + " is now " + (t + (j - j0 - 1)))
                 }
             })
-            //adding seq
-            boldLoop.forEach((t)=>{
+            boldTemp.forEach((t)=>{
                 if(t > i){
                     boldInstances.add(t + (j - j0 - 1))
                 }
             })
-            //adds new elements
             if(boldInstances.has(i)){
                 for(k = 1; k < j - j0 + 1; k++){
                     boldInstances.add(i + k)
-                    console.log((i + k) + " added")
                 }
             }
-            console.log(boldInstances)
+
+            italicTemp.forEach((t)=>{
+                if(t > i){
+                    italicInstances.delete(t)
+                }
+            })
+            italicTemp.forEach((t)=>{
+                if(t > i){
+                    italicInstances.add(t + (j - j0 - 1))
+                }
+            })
+            if(italicInstances.has(i)){
+                for(k = 1; k < j - j0 + 1; k++){
+                    italicInstances.add(i + k)
+                }
+            }
+
+            underlineTemp.forEach((t)=>{
+                if(t > i){
+                    underlineInstances.delete(t)
+                }
+            })
+            underlineTemp.forEach((t)=>{
+                if(t > i){
+                    underlineInstances.add(t + (j - j0 - 1))
+                }
+            })
+            if(underlineInstances.has(i)){
+                for(k = 1; k < j - j0 + 1; k++){
+                    underlineInstances.add(i + k)
+                }
+            }
+
             modified = true;
-            //TODO: make it work with other formatting
         }
         text = text.replace(`<p id="t${i}">`, "")
         i++
