@@ -15,7 +15,7 @@ let boldInstances = new Set()
 let italicInstances = new Set()
 let underlineInstances = new Set()
 
-let modified = false;
+let open = false
 
 //event listeners
 save.addEventListener("click", (e) => {
@@ -39,6 +39,8 @@ options.addEventListener("mouseover", (e) => {
 
     tools.style.visibility = "visible"
 
+    
+
     optcon.style.pointerEvents = "auto"
     bold.style.pointerEvents = "auto"
     italic.style.pointerEvents = "auto"
@@ -53,7 +55,7 @@ optcon.addEventListener("mouseout", (e) => {
     optionbg.style.height = "20px"
     tools.style.top = "-40px"
 
-    setTimeout(()=>{tools.style.visiblity = "hidden";tools.style.opacity = "0"}, 100);
+    setTimeout(()=>{tools.style.visiblity = "hidden";tools.style.opacity = "0"}, 100)
 
     optcon.style.pointerEvents = "none"
     bold.style.pointerEvents = "none"
@@ -63,7 +65,6 @@ optcon.addEventListener("mouseout", (e) => {
 })
 
 bold.addEventListener("click", (e) => {
-    modified = false;
     let [start, end] = formatRange()
 
     for(i = start; i < end; i++){
@@ -74,7 +75,6 @@ bold.addEventListener("click", (e) => {
 })
 
 italic.addEventListener("click", (e) => {
-    modified = false;
     let [start, end] = formatRange()
 
     for(i = start; i < end; i++){
@@ -85,7 +85,6 @@ italic.addEventListener("click", (e) => {
 })
 
 underline.addEventListener("click", (e) => {
-    modified = false;
     let [start, end] = formatRange()
     
     for(i = start; i < end; i++){
@@ -100,7 +99,7 @@ bodytext.innerHTML = document.cookie
 
 //internal functions
 function loadEffects(){
-    let text = getPlainText(bodytext.innerHTML)
+    let text = getPlainText(bodytext.innerHTML, true)
     const plainText = text
 
     //how much formatting was inserted
@@ -141,7 +140,7 @@ function loadEffects(){
     bodytext.innerHTML = text
 }
 
-function getPlainText(text){
+function getPlainText(text, modify){
     text = text.replaceAll("<b>", "")
     text = text.replaceAll("</b>", "")
     text = text.replaceAll("<i>", "")
@@ -154,7 +153,7 @@ function getPlainText(text){
         let j = text.indexOf("</p>", j0)
 
         //if content inside was modified
-        if(!modified && j - j0 > 1){
+        if(modify && j - j0 > 1){
             const boldTemp = new Set([...boldInstances].sort())
             const italicTemp = new Set([...italicInstances].sort())
             const underlineTemp = new Set([...underlineInstances].sort())
@@ -170,7 +169,7 @@ function getPlainText(text){
                 }
             })
             if(boldInstances.has(i)){
-                for(k = 1; k < j - j0 + 1; k++){
+                for(k = 1; k < j - j0; k++){
                     boldInstances.add(i + k)
                 }
             }
@@ -206,8 +205,6 @@ function getPlainText(text){
                     underlineInstances.add(i + k)
                 }
             }
-
-            modified = true;
         }
         text = text.replace(`<p id="t${i}">`, "")
         i++
@@ -219,7 +216,7 @@ function getPlainText(text){
 function formatRange(){
     let start, end
     let sel = window.getSelection()
-    if(bodytext.innerHTML == getPlainText(bodytext.innerHTML)){
+    if(bodytext.innerHTML == getPlainText(bodytext.innerHTML, false)){
         if(sel.direction == "forward"){
         start = (sel.direction == "forward")
                 ? sel.anchorOffset
