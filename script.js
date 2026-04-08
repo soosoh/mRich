@@ -198,7 +198,7 @@ function formatRange(){
         if(sel.direction == "forward"){
         start = (sel.direction == "forward")
                 ? sel.anchorOffset
-                : sel.focusOffset
+                : sel.focusOffset + 1
         end = (sel.direction == "forward")
                 ? sel.focusOffset
                 : sel.anchorOffset
@@ -221,34 +221,46 @@ function formatRange(){
 function expandFormatArea(boldBefore, italicBefore, underlineBefore){
     text = bodytext.innerHTML
     let i = 0
+    //understand this and add comments
+    //new lines, and deleting stuff doesn't work
+    //btw backward selection still isn't made
     while(text.indexOf(`<p id="t${i}">`) >= 0){
         const j0 = text.indexOf(`<p id="t${i}">`) + 10 + i.toString().length
         let j = text.indexOf("</p>", j0)
 
         //if content inside was modified
         if(j - j0 > 1){
-            console.log(boldInstances)
+            //temps: instances before modified here
+            //befores: instances before modified elsewhere
             const boldTemp = new Set([...boldInstances].sort())
             const italicTemp = new Set([...italicInstances].sort())
             const underlineTemp = new Set([...underlineInstances].sort())
 
             boldTemp.forEach((t)=>{
-                if(t > i){
+                if(document.getSelection().anchorNode.parentElement.id == `t${i}` &&
+                (i <= t && t < i + document.getSelection().anchorOffset) &&
+                !boldBefore.has(i)){
                     boldInstances.delete(t)
                 }
-                if(t == i && !boldBefore.has(i)){
+                else if(t > i){
                     boldInstances.delete(t)
                 }
+                console.log(boldInstances)
             })
+            console.log
             boldTemp.forEach((t)=>{
                 if(t > i){
                     boldInstances.add(t + (j - j0 - 1))
-                    console.log(t + " pushed to " + (t + (j - j0 - 1)))
+                    console.log(boldInstances)
                 }
             })
-            if(boldTemp.has(i)){
+            if(!boldBefore.has(i) && boldTemp.has(i)){
+                boldInstances.add(i + j - j0 - 1)
+            }
+            else if(boldTemp.has(i)){
                 for(k = 1; k < j - j0; k++){
                     boldInstances.add(i + k)
+                    console.log(boldInstances)
                 }
             }
 
@@ -289,7 +301,6 @@ function expandFormatArea(boldBefore, italicBefore, underlineBefore){
                     underlineInstances.add(i + k)
                 }
             }
-            console.log(boldInstances)
         }
         i++
     }
