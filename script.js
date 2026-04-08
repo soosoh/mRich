@@ -10,11 +10,12 @@ var optionbg = document.querySelector("#optionbg")
 var format = document.querySelectorAll(".format")
 var [bold, italic, underline] = format
 
-//variables
+//instances
 let boldInstances = new Set()
 let italicInstances = new Set()
 let underlineInstances = new Set()
 
+//is formatting open?
 let open = false
 
 //event listeners
@@ -31,6 +32,7 @@ save.addEventListener("click", (e) => {
     400)
 })
 
+//show tools
 options.addEventListener("mouseover", (e) => {
     optionbg.style.backgroundColor = "rgb(254, 239, 164)"
     optionbg.style.height = "80px"
@@ -44,6 +46,7 @@ options.addEventListener("mouseover", (e) => {
         el.style.backgroundColor = "rgb(255, 249, 231)"
     })
     
+    //check if selected already has instances
     if(document.getSelection().direction != "none"){
         if(bodytext.innerHTML != getPlainText(bodytext.innerHTML)){
             let [start, end] = formatRange()
@@ -78,6 +81,7 @@ optcon.addEventListener("mouseout", (e) => {
     optionbg.style.height = "20px"
     tools.style.top = "-40px"
 
+    //wait for animation to work
     setTimeout(()=>{tools.style.visiblity = "hidden";tools.style.opacity = "0"}, 100)
 
     optcon.style.pointerEvents = "none"
@@ -87,6 +91,7 @@ optcon.addEventListener("mouseout", (e) => {
     open = false
 })
 
+//append formatting to instances
 bold.addEventListener("click", (e) => {
     if(document.getSelection().direction == "none") return
 
@@ -132,7 +137,7 @@ underline.addEventListener("click", (e) => {
 //pageload
 bodytext.innerHTML = document.cookie
 
-//internal functions
+//apply formatting to bodytext
 function loadEffects(){
     let text = getPlainText(bodytext.innerHTML)
     const plainText = text
@@ -175,6 +180,7 @@ function loadEffects(){
     bodytext.innerHTML = text
 }
 
+//extract plain text without formatting
 function getPlainText(text){
     text = text.replaceAll("<b>", "")
     text = text.replaceAll("</b>", "")
@@ -191,6 +197,7 @@ function getPlainText(text){
     return text
 }
 
+//return selected text to format
 function formatRange(){
     let start, end
     let sel = window.getSelection()
@@ -218,12 +225,14 @@ function formatRange(){
     return [start, end]
 }
 
+//handle text written within formatting area
 function expandFormatArea(boldBefore, italicBefore, underlineBefore){
     text = bodytext.innerHTML
     let i = 0
     //understand this and add comments
     //new lines, and deleting stuff doesn't work
     //btw backward selection still isn't made
+    //and load formatting from cookies
     while(text.indexOf(`<p id="t${i}">`) >= 0){
         const j0 = text.indexOf(`<p id="t${i}">`) + 10 + i.toString().length
         let j = text.indexOf("</p>", j0)
@@ -236,71 +245,98 @@ function expandFormatArea(boldBefore, italicBefore, underlineBefore){
             const italicTemp = new Set([...italicInstances].sort())
             const underlineTemp = new Set([...underlineInstances].sort())
 
+            let start = document.getSelection().anchorOffset
+            //TODO: fix to support backward selection
+
             boldTemp.forEach((t)=>{
+                //if selection start includes this and this isn't supposed to be modified,
+                //and formatting for its sibiling element was done directly prior to this
                 if(document.getSelection().anchorNode.parentElement.id == `t${i}` &&
-                (i <= t && t < i + document.getSelection().anchorOffset) &&
+                (i <= t && t < i + start) &&
                 !boldBefore.has(i)){
                     boldInstances.delete(t)
                 }
                 else if(t > i){
                     boldInstances.delete(t)
                 }
-                console.log(boldInstances)
             })
-            console.log
+            //add newly formatted indexes excluding intrinsic unselected ones
+            if(boldTemp.has(i)){
+                for(k = 0; k < j - j0; k++){
+                    if(document.getSelection().anchorNode.parentElement.id == `t${i}` &&
+                    (k < start) &&
+                    !boldBefore.has(i)){
+                        continue
+                    }
+                    boldInstances.add(i + k)
+                }
+            }
+            //pushes back existing instances
             boldTemp.forEach((t)=>{
                 if(t > i){
                     boldInstances.add(t + (j - j0 - 1))
-                    console.log(boldInstances)
                 }
             })
-            if(!boldBefore.has(i) && boldTemp.has(i)){
-                boldInstances.add(i + j - j0 - 1)
-            }
-            else if(boldTemp.has(i)){
-                for(k = 1; k < j - j0; k++){
-                    boldInstances.add(i + k)
-                    console.log(boldInstances)
-                }
-            }
 
             italicTemp.forEach((t)=>{
-                if(t > i){
+                //if selection start includes this and this isn't supposed to be modified,
+                //and formatting for its sibiling element was done directly prior to this
+                if(document.getSelection().anchorNode.parentElement.id == `t${i}` &&
+                (i <= t && t < i + start) &&
+                !italicBefore.has(i)){
                     italicInstances.delete(t)
                 }
-                if(t == i && !italicBefore.has(i)){
+                else if(t > i){
                     italicInstances.delete(t)
                 }
             })
+            //add newly formatted indexes excluding intrinsic unselected ones
+            if(italicTemp.has(i)){
+                for(k = 0; k < j - j0; k++){
+                    if(document.getSelection().anchorNode.parentElement.id == `t${i}` &&
+                    (k < start) &&
+                    !italicBefore.has(i)){
+                        continue
+                    }
+                    italicInstances.add(i + k)
+                }
+            }
+            //pushes back existing instances
             italicTemp.forEach((t)=>{
                 if(t > i){
                     italicInstances.add(t + (j - j0 - 1))
                 }
             })
-            if(italicTemp.has(i)){
-                for(k = 1; k < j - j0 + 1; k++){
-                    italicInstances.add(i + k)
-                }
-            }
 
             underlineTemp.forEach((t)=>{
-                if(t > i){
+                //if selection start includes this and this isn't supposed to be modified,
+                //and formatting for its sibiling element was done directly prior to this
+                if(document.getSelection().anchorNode.parentElement.id == `t${i}` &&
+                (i <= t && t < i + start) &&
+                !underlineBefore.has(i)){
                     underlineInstances.delete(t)
                 }
-                if(t == i && !underlineBefore.has(i)){
+                else if(t > i){
                     underlineInstances.delete(t)
                 }
             })
+            //add newly formatted indexes excluding intrinsic unselected ones
+            if(underlineTemp.has(i)){
+                for(k = 0; k < j - j0; k++){
+                    if(document.getSelection().anchorNode.parentElement.id == `t${i}` &&
+                    (k < start) &&
+                    !underlineBefore.has(i)){
+                        continue
+                    }
+                    underlineInstances.add(i + k)
+                }
+            }
+            //pushes back existing instances
             underlineTemp.forEach((t)=>{
                 if(t > i){
                     underlineInstances.add(t + (j - j0 - 1))
                 }
             })
-            if(underlineTemp.has(i)){
-                for(k = 1; k < j - j0 + 1; k++){
-                    underlineInstances.add(i + k)
-                }
-            }
         }
         i++
     }
