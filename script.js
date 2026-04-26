@@ -100,6 +100,7 @@ bold.addEventListener("click", (e) => {
     let selectedInstances = new Set([...Array(end - start).keys()].map(x => x + start))
     let beforeFormatting = [boldInstances, italicInstances, underlineInstances]
     boldInstances = boldInstances.symmetricDifference(selectedInstances)
+    console.log(boldInstances)
 
     expandFormatArea(...beforeFormatting)
 
@@ -188,12 +189,12 @@ function getPlainText(text){
     text = text.replaceAll("</i>", "")
     text = text.replaceAll("<u>", "")
     text = text.replaceAll("</u>", "")
-    let i = 0
-    while(text.indexOf(`<p id="t${i}">`) >= 0){
+    while(text.indexOf("</p>") >= 0){
+        i = parseInt(text.slice(text.indexOf('<p id="t' + 8), text.indexOf(">") - 1))
         text = text.replace(`<p id="t${i}">`, "")
+        text = text.replace("</p>", "")
         i++
     }
-    text = text.replaceAll("</p>", "")
     return text
 }
 
@@ -202,14 +203,12 @@ function formatRange(){
     let start, end
     let sel = window.getSelection()
     if(bodytext.innerHTML == getPlainText(bodytext.innerHTML)){
-        if(sel.direction == "forward"){
         start = (sel.direction == "forward")
                 ? sel.anchorOffset
-                : sel.focusOffset + 1
+                : sel.focusOffset
         end = (sel.direction == "forward")
                 ? sel.focusOffset
                 : sel.anchorOffset
-        }
     }
     else{
         start = parseInt(((sel.direction == "forward")
@@ -225,14 +224,13 @@ function formatRange(){
     return [start, end]
 }
 
+//TODO: load formatting from cookies
+//TODO: support new lines
+
 //handle text written within formatting area
 function expandFormatArea(boldBefore, italicBefore, underlineBefore){
     text = bodytext.innerHTML
     let i = 0
-    //understand this and add comments
-    //new lines, and deleting stuff doesn't work
-    //btw backward selection still isn't made
-    //and load formatting from cookies
     while(text.indexOf(`<p id="t${i}">`) >= 0){
         const j0 = text.indexOf(`<p id="t${i}">`) + 10 + i.toString().length
         let j = text.indexOf("</p>", j0)
@@ -335,6 +333,32 @@ function expandFormatArea(boldBefore, italicBefore, underlineBefore){
             underlineTemp.forEach((t)=>{
                 if(t > i){
                     underlineInstances.add(t + (j - j0 - 1))
+                }
+            })
+        }
+        i++
+    }
+}
+
+//handle text removed within formatting area
+function shrinkFormatArea(boldBefore, italicBefore, underlineBefore){
+    text = bodytext.innerHTML
+    let maxp
+    while(text.indexOf("<p id=t") > 0){
+        wherep = text.indexOf("<p id=t")
+        maxp = parseInt(text.slice(wherep + 8, text.indexOf(">", text.indexOf(wherep+8)) - 1))
+    }
+    let i = 0
+    while(i <= maxp){
+        if(text.indexOf(`<p id="t${i}">`) < 0){
+            const boldTemp = new Set([...boldInstances])
+            const italicTemp = new Set([...italicInstances])
+            const underlineTemp = new Set([...underlineInstances])
+
+            boldTemp.forEach((t)=>{
+                if(t > i){
+                    boldInstances.delete(t)
+                    boldInstances.add(t-1)
                 }
             })
         }
